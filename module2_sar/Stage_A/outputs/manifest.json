@@ -1,0 +1,74 @@
+[
+  {
+    "scene_id": "CHENNAI_DEMO",
+    "patch_path": "outputs_stage_a/preprocessed_patches/CHENNAI_DEMO_0000.tif",
+    "acquisition_timestamp_utc": "2023-12-04T00:30:00Z",
+    "crs": "EPSG:4326",
+    "transform": [
+      0.0001,
+      0.0,
+      80.25,
+      0.0,
+      -0.0001,
+      13.15
+    ],
+    "bands": [
+      "VV",
+      "VH"
+    ]
+  },
+  {
+    "scene_id": "CHENNAI_DEMO",
+    "patch_path": "outputs_stage_a/preprocessed_patches/CHENNAI_DEMO_0001.tif",
+    "acquisition_timestamp_utc": "2023-12-04T00:30:00Z",
+    "crs": "EPSG:4326",
+    "transform": [
+      0.0001,
+      0.0,
+      80.2756,
+      0.0,
+      -0.0001,
+      13.15
+    ],
+    "bands": [
+      "VV",
+      "VH"
+    ]
+  },
+  {
+    "scene_id": "CHENNAI_DEMO",
+    "patch_path": "outputs_stage_a/preprocessed_patches/CHENNAI_DEMO_0002.tif",
+    "acquisition_timestamp_utc": "2023-12-04T00:30:00Z",
+    "crs": "EPSG:4326",
+    "transform": [
+      0.0001,
+      0.0,
+      80.25,
+      0.0,
+      -0.0001,
+      13.1244
+    ],
+    "bands": [
+      "VV",
+      "VH"
+    ]
+  },
+  {
+    "scene_id": "CHENNAI_DEMO",
+    "patch_path": "outputs_stage_a/preprocessed_patches/CHENNAI_DEMO_0003.tif",
+    "acquisition_timestamp_utc": "2023-12-04T00:30:00Z",
+    "crs": "EPSG:4326",
+    "transform": [
+      0.0001,
+      0.0,
+      80.2756,
+      0.0,
+      -0.0001,
+      13.1244
+    ],
+    "bands": [
+      "VV",
+      "VH"
+    ]
+  }
+]
