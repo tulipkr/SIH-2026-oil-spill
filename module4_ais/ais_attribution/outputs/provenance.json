@@ -1,0 +1,16 @@
+{
+    "timestamp_utc": "2026-09-10T03:16:58.874934+00:00",
+    "ais_data_source": "synthetic",
+    "input_file": "data/synthetic/synthetic_ais.csv",
+    "total_records": 600,
+    "normalized_records": 600,
+    "filtered_records": 60,
+    "coordinate_reference_system": "EPSG:4326",
+    "processing_notes": [
+        "AIS records were normalized to the internal schema.",
+        "Invalid records were skipped during cleaning.",
+        "AIS gaps are informational only and do not reduce candidate ranking.",
+        "AIS completeness is contextual only and is not included in the composite score.",
+        "Composite scores are heuristic ranking signals and not probabilities."
+    ]
+}
