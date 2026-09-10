@@ -1,0 +1,39 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              80.15,
+              13.05
+            ],
+            [
+              80.2,
+              13.05
+            ],
+            [
+              80.2,
+              13.1
+            ],
+            [
+              80.15,
+              13.1
+            ],
+            [
+              80.15,
+              13.05
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "spill_id": "spill_001",
+        "area_sq_km": 12.4
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "status": "success",
+  "backtracking_valid": true,
+  "source_estimate": {
+    "estimated_lat": 13.02,
+    "estimated_lon": 80.12,
+    "estimated_time_utc": "2026-09-09T04:00:00Z",
+    "model_used": "OpenDrift / ERA5 + GLORYS"
+  },
+  "uncertainty_bounds": {
+    "radius_km": 2.5,
+    "confidence_interval": 0.9
+  }
+}

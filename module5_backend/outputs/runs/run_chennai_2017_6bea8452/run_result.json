@@ -1,0 +1,149 @@
+{
+  "run_id": "run_chennai_2017_6bea8452",
+  "scene_id": "chennai_2017",
+  "run_mode": "live",
+  "started_at_utc": "2026-09-09T12:40:51.978488+00:00",
+  "completed_at_utc": "2026-09-09T12:40:52.078948+00:00",
+  "overall_status": "success",
+  "stages": {
+    "sar_preprocessing": {
+      "status": "success",
+      "output_path": "backend\\outputs\\runs\\run_chennai_2017_6bea8452\\stageA_manifest.json",
+      "output_paths": null,
+      "error": null
+    },
+    "segmentation": {
+      "status": "success",
+      "output_path": "backend\\outputs\\runs\\run_chennai_2017_6bea8452\\tulip_result.json",
+      "output_paths": null,
+      "error": null
+    },
+    "geometry_extraction": {
+      "status": "success",
+      "output_path": null,
+      "output_paths": {
+        "spill_geometry_geojson": "backend\\outputs\\runs\\run_chennai_2017_6bea8452\\spill_geometry.geojson",
+        "spill_summary": "backend\\outputs\\runs\\run_chennai_2017_6bea8452\\spill_summary.json"
+      },
+      "error": null
+    },
+    "drift_backtracking": {
+      "status": "success",
+      "output_path": "backend\\outputs\\runs\\run_chennai_2017_6bea8452\\source_estimate.json",
+      "output_paths": null,
+      "error": null
+    },
+    "ais_ranking": {
+      "status": "success",
+      "output_path": null,
+      "output_paths": {
+        "candidate_ranking": "backend\\outputs\\runs\\run_chennai_2017_6bea8452\\candidate_ranking.json",
+        "normalized_ais_tracks": "backend\\outputs\\runs\\run_chennai_2017_6bea8452\\normalized_ais_tracks.geojson"
+      },
+      "error": null
+    }
+  },
+  "failed_stage": null,
+  "results": {
+    "spill_geometry_geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  80.15,
+                  13.05
+                ],
+                [
+                  80.2,
+                  13.05
+                ],
+                [
+                  80.2,
+                  13.1
+                ],
+                [
+                  80.15,
+                  13.1
+                ],
+                [
+                  80.15,
+                  13.05
+                ]
+              ]
+            ]
+          },
+          "properties": {
+            "spill_id": "spill_001",
+            "area_sq_km": 12.4
+          }
+        }
+      ]
+    },
+    "spill_summary": {
+      "scene_id": "chennai_2017",
+      "total_spills_detected": 1,
+      "total_area_sq_km": 12.4
+    },
+    "source_estimate": {
+      "estimated_lat": 13.02,
+      "estimated_lon": 80.12,
+      "estimated_time_utc": "2026-09-09T04:00:00Z",
+      "model_used": "OpenDrift / ERA5 + GLORYS"
+    },
+    "candidate_ranking": {
+      "region_id": "BAY_OF_BENGAL_N",
+      "ais_source": "Spire_Maritime_API",
+      "disclaimer": "DISCLAIMER: Probabilistic vessel attribution only. Not legal proof of liability.",
+      "ranked_candidates": [
+        {
+          "mmsi": 419001234,
+          "vessel_name": "TANKER ALPHA",
+          "score": 0.88,
+          "rank": 1,
+          "distance_at_time_km": 1.2
+        },
+        {
+          "mmsi": 419005678,
+          "vessel_name": "CARGO BETA",
+          "score": 0.35,
+          "rank": 2,
+          "distance_at_time_km": 8.7
+        }
+      ]
+    },
+    "normalized_ais_tracks": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                80.1,
+                13.0
+              ],
+              [
+                80.12,
+                13.02
+              ],
+              [
+                80.15,
+                13.05
+              ]
+            ]
+          },
+          "properties": {
+            "mmsi": 419001234,
+            "vessel_name": "TANKER ALPHA"
+          }
+        }
+      ]
+    }
+  }
+}

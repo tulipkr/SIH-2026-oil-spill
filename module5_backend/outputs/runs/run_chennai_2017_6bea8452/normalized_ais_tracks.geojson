@@ -1,0 +1,29 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            80.1,
+            13.0
+          ],
+          [
+            80.12,
+            13.02
+          ],
+          [
+            80.15,
+            13.05
+          ]
+        ]
+      },
+      "properties": {
+        "mmsi": 419001234,
+        "vessel_name": "TANKER ALPHA"
+      }
+    }
+  ]
+}

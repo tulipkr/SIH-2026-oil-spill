@@ -1,0 +1,11 @@
+demo_scenes:
+  - scene_id: chennai_2017
+    precomputed: true
+  - scene_id: mumbai_2022
+    precomputed: false
+
+run_timeout_seconds: 600
+storage_backend: filesystem
+api_host: 0.0.0.0
+api_port: 8000
+outputs_dir: backend/outputs/runs

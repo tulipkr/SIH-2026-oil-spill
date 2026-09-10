@@ -1,0 +1,21 @@
+{
+  "region_id": "BAY_OF_BENGAL_N",
+  "ais_source": "Spire_Maritime_API",
+  "disclaimer": "DISCLAIMER: Probabilistic vessel attribution only. Not legal proof of liability.",
+  "ranked_candidates": [
+    {
+      "mmsi": 419001234,
+      "vessel_name": "TANKER ALPHA",
+      "score": 0.88,
+      "rank": 1,
+      "distance_at_time_km": 1.2
+    },
+    {
+      "mmsi": 419005678,
+      "vessel_name": "CARGO BETA",
+      "score": 0.35,
+      "rank": 2,
+      "distance_at_time_km": 8.7
+    }
+  ]
+}

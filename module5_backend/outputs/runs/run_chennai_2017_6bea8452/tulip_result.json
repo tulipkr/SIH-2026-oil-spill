@@ -1,0 +1,6 @@
+{
+  "status": "success",
+  "mask_path": "outputs/runs/sample/chennai_2017_mask.tif",
+  "probability_map_path": "outputs/runs/sample/chennai_2017_prob.tif",
+  "confidence_score": 0.94
+}

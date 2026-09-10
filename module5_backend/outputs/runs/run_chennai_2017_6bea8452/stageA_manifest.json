@@ -1,0 +1,12 @@
+{
+  "status": "success",
+  "scene_id": "chennai_2017",
+  "preprocessed_image_path": "outputs/runs/sample/chennai_2017_preprocessed.tif",
+  "acquisition_timestamp_utc": "2026-09-09T10:00:00Z",
+  "bounds": [
+    80.1,
+    13.0,
+    80.3,
+    13.2
+  ]
+}
