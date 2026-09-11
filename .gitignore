@@ -216,3 +216,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# SIH Module 1 - generated/local data
+module1_unet/segmentation/venv/
+module1_unet/segmentation/checkpoints/
+module1_unet/segmentation/outputs/
+module1_unet/segmentation/data/synthetic/
+module1_unet/segmentation/data/test_lookalike/
+module1_unet/segmentation/data/train/
+module1_unet/segmentation/data/val/
+
+# Local dataset files
+datasets/

@@ -1,14 +1,5 @@
-# Module 1 (Tulip) config — field names match spec §25 exactly.
-#
-# ⚠️ normalization.method defaults to "none" (pass-through), NOT "db_clip_minmax",
-# even though §25 of the spec document shows db_clip_minmax as its example.
-# §7 of the same document marks the exact normalization as "PENDING: ZENODO
-# VERIFICATION" — do not switch this to db_clip_minmax until a real Zenodo
-# TIFF has been inspected and Ishita has confirmed her preprocessing applies
-# the same thing. See README "Before trusting this on real data".
-
 data:
-  manifest_path: "data/synthetic/manifest.json"
+  manifest_path: "data/zenodo_manifest.json"
   patch_size: 256
   bands: ["VV", "VH"]
   in_channels: 2

@@ -18,7 +18,7 @@ def load_config(config_path: str | Path) -> dict[str, Any]:
             f"Config file not found at {config_path.resolve()}. "
             f"Pass --config pointing at your config.yaml."
         )
-    with config_path.open("r") as f:
+    with open(config_path, encoding="utf-8") as f:
         try:
             config = yaml.safe_load(f)
         except yaml.YAMLError as e:
