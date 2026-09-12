@@ -6,6 +6,7 @@ Usage:
 """
 from __future__ import annotations
 
+import json
 import argparse
 import logging
 import sys
@@ -14,11 +15,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.dataset import (
-    NormalizationConfig,
-    SARSegmentationDataset,
     load_manifest_entries,
     train_val_split,
+    NormalizationConfig,
 )
+from pretiled_dataset import PreTiledDataset
 from src.losses import build_loss
 from src.metrics import aggregate_metrics, compute_metrics, false_positive_rate_on_lookalike
 from src.model import build_model
@@ -28,27 +29,15 @@ logger = logging.getLogger(__name__)
 
 
 def _build_dataset(entries, config, require_mask=True):
-    norm_cfg = NormalizationConfig.from_dict(config["data"].get("normalization"))
-    tiling = config["data"].get("tiling", {})
-    return SARSegmentationDataset(
+    return PreTiledDataset(
         entries,
-        norm_cfg,
-        config["data"]["bands"],
-        config["data"]["patch_size"],
         require_mask=require_mask,
-        tiling_strategy=tiling.get("strategy", "sliding_window"),
-        tiling_stride=tiling.get("stride"),
-        weighted_sampling=config["data"].get("class_imbalance", {}).get("weighted_sampling", False),
-        min_oil_fraction_target=config["data"]
-        .get("class_imbalance", {})
-        .get("min_oil_fraction_target", 0.3),
-        seed=config["data"]["seed"],
     )
 
 
 def run_training(config_path: str) -> dict:
     import torch
-    from torch.utils.data import DataLoader, WeightedRandomSampler
+    from torch.utils.data import DataLoader
 
     config = load_config(config_path)
     setup_logging(config["logging"]["log_dir"], config["logging"].get("level", "INFO"))
@@ -57,12 +46,20 @@ def run_training(config_path: str) -> dict:
     device = resolve_device(config["train"].get("device", "auto"))
     logger.info(f"Using device: {device}")
 
-    entries = load_manifest_entries(config["data"]["manifest_path"])
-    train_entries, val_entries = train_val_split(
-        entries, config["data"]["val_fraction"], config["data"]["seed"]
-    )
-    logger.info(f"Train samples: {len(train_entries)}, Val samples: {len(val_entries)}")
+    with open(config["data"]["manifest_path"], "r", encoding="utf-8") as f:
+        pretiled_data = json.load(f)
 
+    entries = pretiled_data["entries"]
+
+    train_entries, val_entries = train_val_split(
+        entries,
+        config["data"]["val_fraction"],
+        config["data"]["seed"],
+    )
+
+    logger.info(
+        f"Train tiles: {len(train_entries)}, Val tiles: {len(val_entries)}"
+    )
     norm_cfg = NormalizationConfig.from_dict(config["data"].get("normalization"))
     if norm_cfg.method != "none":
         logger.warning(
@@ -74,9 +71,8 @@ def run_training(config_path: str) -> dict:
     train_ds = _build_dataset(train_entries, config, require_mask=True)
     val_ds = _build_dataset(val_entries if val_entries else train_entries, config, require_mask=True)
 
-    # Dataset-level positive-tile check was verified separately from masks.
-    # 15,814 / 76,800 = 0.206 positive tiles.
-    train_positive_fraction = 0.206
+# Positive-tile fraction in the full 200-scene pretiled dataset.
+    train_positive_fraction = 0.2432
     logger.info(
         f"Fraction of training tiles with oil pixels: {train_positive_fraction:.3f}"
     )

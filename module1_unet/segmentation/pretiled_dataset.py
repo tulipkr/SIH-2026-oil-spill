@@ -25,15 +25,13 @@ from torch.utils.data import Dataset
 
 
 class PreTiledDataset(Dataset):
-    def __init__(self, manifest_path: str | Path, require_mask: bool = True):
-        manifest_path = Path(manifest_path)
-        with manifest_path.open() as f:
-            data = json.load(f)
-        entries: list[dict[str, Any]] = data["entries"]
+    def __init__(self, entries: list[dict[str, Any]], require_mask: bool = True):
         if require_mask:
             entries = [e for e in entries if "mask_path" in e]
         if not entries:
-            raise ValueError(f"No usable entries in {manifest_path} (require_mask={require_mask})")
+            raise ValueError(
+                f"No usable entries in (require_mask={require_mask})"
+            )
         self.entries = entries
         self.require_mask = require_mask
 
