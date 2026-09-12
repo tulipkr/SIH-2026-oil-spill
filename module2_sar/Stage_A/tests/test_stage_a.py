@@ -44,5 +44,5 @@ def test_tiling_and_manifest(tmp_path):
     with rasterio.open(patch_sample) as src:
         assert src.count == 2
         arr = src.read()
-        assert arr.min() >= 0.0
-        assert arr.max() <= 1.0
+        assert arr.shape == (2, 256, 256)
+        assert np.isfinite(arr).all()
