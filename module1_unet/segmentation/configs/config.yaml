@@ -1,5 +1,5 @@
 data:
-  manifest_path: "data/zenodo_manifest.json"
+  manifest_path: "/kaggle/working/pretiled_data/manifest.json"
   patch_size: 256
   bands: ["VV", "VH"]
   in_channels: 2
