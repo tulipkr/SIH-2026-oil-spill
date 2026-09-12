@@ -30,8 +30,9 @@ class PreTiledDataset(Dataset):
             entries = [e for e in entries if "mask_path" in e]
         if not entries:
             raise ValueError(
-                f"No usable entries in (require_mask={require_mask})"
+                f"No usable entries (require_mask={require_mask})"
             )
+
         self.entries = entries
         self.require_mask = require_mask
 
