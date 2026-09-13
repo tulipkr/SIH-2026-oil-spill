@@ -24,6 +24,7 @@ import torch
 
 from src.model import build_model
 from src.utils import load_config
+from src.schema import validate_inference_result
 from datetime import datetime, timezone
 
 def load_checkpoint(model, checkpoint_path, device):
@@ -54,7 +55,7 @@ def predict_scene(
     model,
     input_path,
     output_dir,
-    device,
+    device, config,
     patch_size=256,
     threshold=0.5,
 ):
@@ -114,9 +115,12 @@ def predict_scene(
                         ),
                     ).astype(np.float32)
 
-                    # Ignore completely empty patches.
-                    if np.isnan(patch).all():
-                        continue
+                    # Reject corrupt input rather than silently replacing NaN/Inf values.
+                    if not np.isfinite(patch).all():
+                        raise ValueError(
+                            f"{input_path}: input scene contains NaN/Inf values "
+                            f"in patch at row={row}, col={col}."
+                        )
 
                     # Pad edge patches to 256x256.
                     padded = np.zeros(
@@ -125,14 +129,6 @@ def predict_scene(
                     )
 
                     padded[:, :h, :w] = patch
-
-                    # Convert NaNs to zero.
-                    padded = np.nan_to_num(
-                        padded,
-                        nan=0.0,
-                        posinf=0.0,
-                        neginf=0.0,
-                    )
 
                     tensor = torch.from_numpy(
                         padded
@@ -229,58 +225,16 @@ def predict_scene(
 
     oil_pixels = int(binary_mask.sum())
 
-    pixel_area = abs(
-        transform.a * transform.e
-    )
-
-    estimated_area = oil_pixels * pixel_area
-
-    if oil_pixels > 0:
-
-        rows, cols = np.where(
-            binary_mask == 1
-        )
-
-        centroid_row = float(rows.mean())
-        centroid_col = float(cols.mean())
-
-        centroid_x, centroid_y = rasterio.transform.xy(
-            transform,
-            centroid_row,
-            centroid_col,
-        )
-
-        min_row = int(rows.min())
-        max_row = int(rows.max())
-        min_col = int(cols.min())
-        max_col = int(cols.max())
-
-        bbox = {
-            "min_row": min_row,
-            "max_row": max_row,
-            "min_col": min_col,
-            "max_col": max_col,
-        }
-
-        centroid = {
-            "longitude": float(centroid_x),
-            "latitude": float(centroid_y),
-        }
-
-    else:
-
-        bbox = None
-        centroid = None
-
+    
     # ---------------------------------------------------------
     # Save metadata
     # ---------------------------------------------------------
 
     metadata = {
         "scene_id": scene_id,
-        "model_version": "unet_effb3_v1",
+        "model_version": config["inference"]["model_version"],
         "inference_timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        "acquisition_timestamp_utc": "UNKNOWN",
+        "acquisition_timestamp_utc": None,
         "crs": str(crs) if crs else None,
         "transform": [
             transform.a,
@@ -290,7 +244,7 @@ def predict_scene(
             transform.e,
             transform.f,
         ],
-        "geolocation_incomplete": crs is None,
+        "geolocation_incomplete": crs is None or transform is None,
         "threshold_used": threshold,
         "positive_pixel_fraction": float(binary_mask.mean()),
         "mean_score_in_positive_region": (
@@ -305,6 +259,7 @@ def predict_scene(
         "mask_path": str(mask_path),
     }
 
+    validate_inference_result(metadata)
     metadata_path = (
         output_dir / "inference_result.json"
     )
@@ -336,20 +291,6 @@ def predict_scene(
     print(
         f"Oil pixels: {oil_pixels}"
     )
-
-    print(
-        f"Estimated area: {estimated_area:.6f} "
-        f"(CRS coordinate units²)"
-    )
-
-    if centroid:
-        print(
-            "Centroid: "
-            f"{centroid['longitude']:.6f}, "
-            f"{centroid['latitude']:.6f}"
-        )
-    else:
-        print("Centroid: none")
 
 
 def main():
@@ -430,8 +371,9 @@ def main():
         input_path=args.input,
         output_dir=args.output_dir,
         device=device,
+        config=config,
         patch_size=args.patch_size,
-        threshold=args.threshold,
+        threshold=config["inference"]["threshold"],
     )
 
 
