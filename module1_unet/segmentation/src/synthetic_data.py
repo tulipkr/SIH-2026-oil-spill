@@ -71,8 +71,9 @@ def generate_synthetic_dataset(
 
         if not is_no_oil:
             cy, cx = rng.randint(patch_size // 4, 3 * patch_size // 4, size=2)
-            radius = rng.randint(15, min(40, patch_size // 4))
-            yy, xx = np.ogrid[:patch_size, :patch_size]
+            max_radius = max(2, patch_size // 4)
+            min_radius = min(15, max_radius - 1)
+            radius = rng.randint(min_radius, max_radius)            yy, xx = np.ogrid[:patch_size, :patch_size]
             blob = (yy - cy) ** 2 + (xx - cx) ** 2 <= radius**2
             vv[blob] -= 10.0  # push well below a typical fallback threshold
             vh[blob] -= 6.0
