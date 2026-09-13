@@ -23,11 +23,12 @@ from typing import Any
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+import random
 from src.dataset import NormalizationConfig, apply_normalization
 
 
 class PreTiledDataset(Dataset):
-    def __init__(self, entries: list[dict[str, Any]], norm_cfg: NormalizationConfig, require_mask: bool = True):
+    def __init__(self, entries: list[dict[str, Any]], norm_cfg: NormalizationConfig, require_mask: bool = True, augmentation: dict[str, Any] | None = None):
         if require_mask:
             entries = [e for e in entries if "mask_path" in e]
         if not entries:
@@ -38,7 +39,7 @@ class PreTiledDataset(Dataset):
         self.entries = entries
         self.require_mask = require_mask
         self.norm_cfg = norm_cfg
-
+        self.augmentation = augmentation or {}
     def __len__(self) -> int:
         return len(self.entries)
 
@@ -51,6 +52,19 @@ class PreTiledDataset(Dataset):
 
         if self.require_mask:
             mask = torch.load(entry["mask_path"])
+            if self.require_mask:
+                if self.augmentation.get("horizontal_flip", False) and random.random() < 0.5:
+                    image = torch.flip(image, dims=[2])
+                    mask = torch.flip(mask, dims=[2])
+
+                if self.augmentation.get("vertical_flip", False) and random.random() < 0.5:
+                    image = torch.flip(image, dims=[1])
+                    mask = torch.flip(mask, dims=[1])
+
+                if self.augmentation.get("rotate_90", False):
+                    k = random.randint(0, 3)
+                    image = torch.rot90(image, k=k, dims=[1, 2])
+                    mask = torch.rot90(mask, k=k, dims=[1, 2])
             return image, mask, entry["scene_id"]
 
         return image, entry["scene_id"], {}
