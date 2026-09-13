@@ -205,10 +205,15 @@ class SARSegmentationDataset:
 
         for i, entry in enumerate(self.entries):
             # Only read image metadata, not the entire image.
-            with rasterio.open(entry["patch_path"]) as src:
-                h = src.height
-                w = src.width
-
+            try:
+                with rasterio.open(entry["patch_path"]) as src:
+                    h = src.height
+                    w = src.width
+            except rasterio.errors.RasterioIOError as exc:
+                raise DatasetValidationError(
+                    f"Could not open patch file: {entry['patch_path']}"
+                ) from exc
+            
             if h == self.patch_size and w == self.patch_size:
                 index.append((i, 0, 0))
                 continue
