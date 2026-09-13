@@ -41,8 +41,12 @@ class PreTiledDataset(Dataset):
 
     def __getitem__(self, idx: int):
         entry = self.entries[idx]
-        image = torch.load(entry["image_path"])
+
+        image_path = entry.get("image_path", entry.get("patch_path"))
+        image = torch.load(image_path)
+
         if self.require_mask:
             mask = torch.load(entry["mask_path"])
             return image, mask, entry["scene_id"]
+
         return image, entry["scene_id"], {}
