@@ -55,7 +55,7 @@ inference:
   output_dir: "outputs"
   model_version: "unet_effb3_v1"
   on_dimension_mismatch: reject       # reject | resize  — not specified by spec, defaulting safe
-  on_missing_checkpoint: error         # error | fallback — not specified by spec, defaulting safe
+  on_missing_checkpoint: fallback         # error | fallback — not specified by spec, defaulting safe
 
 fallback:
   db_threshold: -18.0          # pixels below this (on the VV band, dB scale) flagged as oil
