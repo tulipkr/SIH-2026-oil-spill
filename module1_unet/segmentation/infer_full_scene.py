@@ -278,22 +278,31 @@ def predict_scene(
 
     metadata = {
         "scene_id": scene_id,
-        "input_path": str(input_path),
-        "probability_map": str(probability_path),
-        "binary_mask": str(mask_path),
+        "crs": str(crs) if crs else None,
+        "transform": [
+            transform.a,
+            transform.b,
+            transform.c,
+            transform.d,
+            transform.e,
+            transform.f,
+        ],
+        "acquisition_timestamp_utc": "UNKNOWN",
+        "mask_path": str(mask_path),
+        "probability_map_path": str(probability_path),
+        "no_oil_detected": oil_pixels == 0,
+        "geolocation_incomplete": crs is None,
         "threshold": threshold,
         "patch_size": patch_size,
         "image_width": width,
         "image_height": height,
-        "crs": str(crs) if crs else None,
         "oil_pixels": oil_pixels,
-        "estimated_area_crs_units": float(estimated_area),
         "centroid": centroid,
         "bounding_box_pixels": bbox,
     }
 
     metadata_path = (
-        output_dir / f"{scene_id}_metadata.json"
+        output_dir / "inference_result.json"
     )
 
     with open(
