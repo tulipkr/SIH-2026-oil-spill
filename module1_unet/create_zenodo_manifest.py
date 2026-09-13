@@ -29,7 +29,7 @@ for oil_file in oil_files:
         "scene_id": oil_file.stem,
         "patch_path": str(oil_file.resolve()).replace("\\", "/"),
         "mask_path": str(mask_file.resolve()).replace("\\", "/"),
-        "acquisition_timestamp_utc": "UNKNOWN",
+        "acquisition_timestamp_utc": None,  # Placeholder for timestamp if available
         "crs": crs,
         "transform": transform,
         "bands": ["VV", "VH"]
