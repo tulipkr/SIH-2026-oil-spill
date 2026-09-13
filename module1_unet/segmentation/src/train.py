@@ -155,8 +155,16 @@ def run_training(config_path: str) -> dict:
                 sample_weights.append(1.0)
                 continue
 
-            mask = torch.load(mask_path, weights_only=False)
-            has_oil = mask.float().mean().item() > 0
+            if str(mask_path).endswith(".pt"):
+                mask = torch.load(mask_path, weights_only=False)
+                has_oil = mask.float().mean().item() > 0
+            else:
+                import rasterio
+
+                with rasterio.open(mask_path) as src:
+                    mask = src.read(1)
+
+                has_oil = np.any(mask > 0)
 
             sample_weights.append(2.0 if has_oil else 1.0)
 
