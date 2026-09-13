@@ -46,20 +46,27 @@ def run_training(config_path: str) -> dict:
     device = resolve_device(config["train"].get("device", "auto"))
     logger.info(f"Using device: {device}")
 
-    with open(config["data"]["manifest_path"], "r", encoding="utf-8") as f:
-        pretiled_data = json.load(f)
+    # Scene-level split:
+    # Train and validation manifests are created BEFORE tiling,
+    # so tiles from the same scene never appear in both sets.
 
-    entries = pretiled_data["entries"]
+    train_manifest = config["data"]["train_manifest_path"]
+    val_manifest = config["data"]["val_manifest_path"]
 
-    train_entries, val_entries = train_val_split(
-        entries,
-        config["data"]["val_fraction"],
-        config["data"]["seed"],
-    )
+    with open(train_manifest, "r", encoding="utf-8") as f:
+        train_data = json.load(f)
+
+    with open(val_manifest, "r", encoding="utf-8") as f:
+        val_data = json.load(f)
+
+    train_entries = train_data["entries"]
+    val_entries = val_data["entries"]
 
     logger.info(
-        f"Train tiles: {len(train_entries)}, Val tiles: {len(val_entries)}"
+        f"Scene-level split: {len(train_entries)} train tiles, "
+        f"{len(val_entries)} validation tiles"
     )
+    
     norm_cfg = NormalizationConfig.from_dict(config["data"].get("normalization"))
     if norm_cfg.method != "none":
         logger.warning(
