@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import argparse
 import logging
+from logging import config
 import sys
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from src.dataset import (
     train_val_split,
     NormalizationConfig,
 )
+from src.dataset import SARSegmentationDataset
 from pretiled_dataset import PreTiledDataset
 from src.losses import build_loss
 from src.metrics import aggregate_metrics, compute_metrics, false_positive_rate_on_lookalike
@@ -80,8 +82,26 @@ def run_training(config_path: str) -> dict:
             f"preprocessing actually applies before trusting results on real data."
         )
 
-    train_ds = _build_dataset(train_entries, config, require_mask=True)
-    val_ds = _build_dataset(val_entries if val_entries else train_entries, config, require_mask=True)
+    if "train_manifest_path" in config["data"] and "val_manifest_path" in config["data"]:
+        train_ds = _build_dataset(train_entries, config, require_mask=True)
+        val_ds = _build_dataset(
+            val_entries if val_entries else train_entries,
+            config,
+            require_mask=True
+        )
+    else:
+        train_ds = SARSegmentationDataset(
+            train_entries,
+            norm_cfg,
+            config["data"]["bands"],
+            patch_size=config["data"]["patch_size"],
+        )
+        val_ds = SARSegmentationDataset(
+            val_entries if val_entries else train_entries,
+            norm_cfg,
+            config["data"]["bands"],
+            patch_size=config["data"]["patch_size"],
+        )
 
 # Positive-tile fraction in the full 200-scene pretiled dataset.
     train_positive_fraction = 0.2432
