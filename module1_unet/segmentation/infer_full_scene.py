@@ -24,7 +24,9 @@ import torch
 
 from src.model import build_model
 from src.utils import load_config
+from src.dataset import NormalizationConfig, apply_normalization
 from src.schema import validate_inference_result
+from src.fallback_detector import run_fallback_detection
 from datetime import datetime, timezone
 
 def load_checkpoint(model, checkpoint_path, device):
@@ -55,9 +57,11 @@ def predict_scene(
     model,
     input_path,
     output_dir,
-    device, config,
+    device, 
+    config,
     patch_size=256,
     threshold=0.5,
+    fallback_used=False,
 ):
     """
     Run tiled inference over one full Sentinel-1 VV/VH scene.
@@ -68,6 +72,7 @@ def predict_scene(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     scene_id = input_path.stem
+    norm_cfg = NormalizationConfig.from_dict(config["data"].get("normalization"))
 
     with rasterio.open(input_path) as src:
 
@@ -94,6 +99,10 @@ def predict_scene(
         counts = np.zeros(
             (height, width),
             dtype=np.float32,
+        )
+        fallback_mask_full = np.zeros(
+            (height, width),
+            dtype=np.uint8,
         )
 
         with torch.no_grad():
@@ -122,6 +131,7 @@ def predict_scene(
                             f"in patch at row={row}, col={col}."
                         )
 
+                    patch = apply_normalization(patch, norm_cfg)
                     # Pad edge patches to 256x256.
                     padded = np.zeros(
                         (2, patch_size, patch_size),
@@ -130,16 +140,26 @@ def predict_scene(
 
                     padded[:, :h, :w] = patch
 
-                    tensor = torch.from_numpy(
-                        padded
-                    ).unsqueeze(0).to(device)
+                    if fallback_used:
+                        # Fallback must operate on the original dB values.
+                        probs, fallback_mask = run_fallback_detection(
+                            patch,
+                            config["fallback"],
+                        )
+                        fallback_mask_full[
+                            row:row + h,
+                            col:col + w,
+                        ] = fallback_mask
+                    else:
+                        tensor = torch.from_numpy(
+                            padded
+                        ).unsqueeze(0).to(device)
 
-                    logits = model(tensor)
+                        logits = model(tensor)
 
-                    probs = torch.sigmoid(logits)
+                        probs = torch.sigmoid(logits)
 
-                    probs = probs.squeeze().detach().cpu().numpy()
-
+                        probs = probs.squeeze().detach().cpu().numpy()
                     # Only keep the real image area.
                     probs = probs[:h, :w]
 
@@ -159,10 +179,12 @@ def predict_scene(
     probability[valid] /= counts[valid]
 
     # Pixels never predicted are left at zero.
-    binary_mask = (
-        probability >= threshold
-    ).astype(np.uint8)
-
+    if fallback_used:
+        binary_mask = fallback_mask_full
+    else:
+        binary_mask = (
+            probability >= threshold
+        ).astype(np.uint8)
     # ---------------------------------------------------------
     # Save probability map
     # ---------------------------------------------------------
@@ -220,7 +242,7 @@ def predict_scene(
         )
 
     # ---------------------------------------------------------
-    # Basic spill geometry/statistics
+    # Basic detection statistics
     # ---------------------------------------------------------
 
     oil_pixels = int(binary_mask.sum())
@@ -232,7 +254,11 @@ def predict_scene(
 
     metadata = {
         "scene_id": scene_id,
-        "model_version": config["inference"]["model_version"],
+        "model_version": (
+            "fallback_rule_based_v0"
+            if fallback_used
+            else config["inference"]["model_version"]
+        ),
         "inference_timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "acquisition_timestamp_utc": None,
         "crs": str(crs) if crs else None,
@@ -244,7 +270,7 @@ def predict_scene(
             transform.e,
             transform.f,
         ],
-        "geolocation_incomplete": crs is None or transform is None,
+        "geolocation_incomplete": crs is None,
         "threshold_used": threshold,
         "positive_pixel_fraction": float(binary_mask.mean()),
         "mean_score_in_positive_region": (
@@ -253,8 +279,12 @@ def predict_scene(
             else 0.0
         ),
         "no_oil_detected": oil_pixels == 0,
-        "score_type": "raw_sigmoid_output",
-        "fallback_used": False,
+        "score_type": (
+            "rule_based_threshold"
+            if fallback_used
+            else "raw_sigmoid_output"
+        ),
+        "fallback_used": fallback_used,
         "prob_map_path": str(probability_path),
         "mask_path": str(mask_path),
     }
@@ -330,13 +360,6 @@ def main():
         help="Inference patch size.",
     )
 
-    parser.add_argument(
-        "--threshold",
-        type=float,
-        default=0.5,
-        help="Probability threshold for binary mask.",
-    )
-
     args = parser.parse_args()
 
     config = load_config(args.config)
@@ -350,17 +373,48 @@ def main():
         f"Using device: {device}"
     )
 
-    model = build_model(config)
+    checkpoint_path = Path(args.checkpoint)
 
-    print(
-        "Loading checkpoint..."
-    )
+    fallback_used = False
 
-    model = load_checkpoint(
-        model,
-        args.checkpoint,
-        device,
-    )
+    if not checkpoint_path.exists():
+        on_missing = config["inference"].get(
+            "on_missing_checkpoint",
+            "error",
+        )
+
+        if on_missing == "error":
+            raise FileNotFoundError(
+                f"Checkpoint not found at {checkpoint_path.resolve()}. "
+                f"Run training first, or set "
+                f"inference.on_missing_checkpoint: fallback "
+                f"in config.yaml to use the rule-based fallback detector."
+            )
+
+        elif on_missing == "fallback":
+            print(
+                "Checkpoint not found — using rule-based fallback detector."
+            )
+            model = None
+            fallback_used = True
+
+        else:
+            raise ValueError(
+                f"Unknown inference.on_missing_checkpoint '{on_missing}'"
+            )
+
+    else:
+        print(
+            "Loading checkpoint..."
+        )
+
+        model = build_model(config)
+
+        model = load_checkpoint(
+            model,
+            checkpoint_path,
+            device,
+        )
 
     print(
         "Running full-scene inference..."
@@ -374,6 +428,7 @@ def main():
         config=config,
         patch_size=args.patch_size,
         threshold=config["inference"]["threshold"],
+        fallback_used=fallback_used,
     )
 
 
