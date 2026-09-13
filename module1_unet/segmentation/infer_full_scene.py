@@ -294,7 +294,7 @@ def predict_scene(
         "threshold_used": threshold,
         "positive_pixel_fraction": float(binary_mask.mean()),
         "mean_score_in_positive_region": (
-            float(probability_map[binary_mask == 1].mean())
+            float(probability[binary_mask == 1].mean())
             if oil_pixels > 0
             else 0.0
         ),
