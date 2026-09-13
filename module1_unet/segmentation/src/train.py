@@ -47,7 +47,7 @@ def _build_dataset(entries, config, require_mask=True):
 
 def run_training(config_path: str) -> dict:
     import torch
-    from torch.utils.data import DataLoader
+    from torch.utils.data import DataLoader, WeightedRandomSampler
 
     config = load_config(config_path)
     setup_logging(config["logging"]["log_dir"], config["logging"].get("level", "INFO"))
@@ -127,10 +127,46 @@ def run_training(config_path: str) -> dict:
         f"Fraction of training tiles with oil pixels: "
         f"{train_positive_fraction:.3f}"
     )
-    train_loader = DataLoader(
-        train_ds, batch_size=config["train"]["batch_size"], shuffle=True,
-        num_workers=config["train"].get("num_workers", 0),
-    )
+    class_imbalance = config["data"].get("class_imbalance", {})
+    weighted_sampling = class_imbalance.get("weighted_sampling", False)
+
+    if weighted_sampling:
+        sample_weights = []
+
+        for entry in train_entries:
+            mask_path = entry.get("mask_path")
+
+            if not mask_path:
+                sample_weights.append(1.0)
+                continue
+
+            mask = torch.load(mask_path, weights_only=False)
+            has_oil = mask.float().mean().item() > 0
+
+            sample_weights.append(2.0 if has_oil else 1.0)
+
+        sampler = WeightedRandomSampler(
+            weights=sample_weights,
+            num_samples=len(sample_weights),
+            replacement=True,
+        )
+
+        train_loader = DataLoader(
+            train_ds,
+            batch_size=config["train"]["batch_size"],
+            sampler=sampler,
+            num_workers=config["train"].get("num_workers", 0),
+        )
+
+        logger.info("Weighted sampling enabled for training.")
+    else:
+        train_loader = DataLoader(
+            train_ds,
+            batch_size=config["train"]["batch_size"],
+            shuffle=True,
+            num_workers=config["train"].get("num_workers", 0),
+        )
+        
     val_loader = DataLoader(
         val_ds, batch_size=config["train"]["batch_size"], shuffle=False,
         num_workers=config["train"].get("num_workers", 0),
