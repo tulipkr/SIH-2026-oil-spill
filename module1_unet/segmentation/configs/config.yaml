@@ -1,5 +1,6 @@
 data:
-  manifest_path: "/kaggle/working/pretiled_data/manifest.json"
+  train_manifest_path: "/kaggle/working/pretiled_train/manifest.json"
+  val_manifest_path: "/kaggle/working/pretiled_val/manifest.json"
   patch_size: 256
   bands: ["VV", "VH"]
   in_channels: 2
