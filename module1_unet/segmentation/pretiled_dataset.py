@@ -20,12 +20,14 @@ import json
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import torch
 from torch.utils.data import Dataset
+from src.dataset import NormalizationConfig, apply_normalization
 
 
 class PreTiledDataset(Dataset):
-    def __init__(self, entries: list[dict[str, Any]], require_mask: bool = True):
+    def __init__(self, entries: list[dict[str, Any]], norm_cfg: NormalizationConfig, require_mask: bool = True):
         if require_mask:
             entries = [e for e in entries if "mask_path" in e]
         if not entries:
@@ -35,6 +37,7 @@ class PreTiledDataset(Dataset):
 
         self.entries = entries
         self.require_mask = require_mask
+        self.norm_cfg = norm_cfg
 
     def __len__(self) -> int:
         return len(self.entries)
@@ -44,6 +47,7 @@ class PreTiledDataset(Dataset):
 
         image_path = entry.get("image_path", entry.get("patch_path"))
         image = torch.load(image_path)
+        image=torch.from_numpy(apply_normalization(image.numpy(), self.norm_cfg))
 
         if self.require_mask:
             mask = torch.load(entry["mask_path"])

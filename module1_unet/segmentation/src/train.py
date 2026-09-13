@@ -33,8 +33,9 @@ logger = logging.getLogger(__name__)
 def _build_dataset(entries, config, require_mask=True):
     sample_path = entries[0].get("image_path") or entries[0].get("patch_path")
     if str(sample_path).endswith(".pt"):
-        return PreTiledDataset(entries, require_mask=require_mask)
-
+        norm_cfg = NormalizationConfig.from_dict(config["data"].get("normalization"))
+        return PreTiledDataset(entries, norm_cfg, require_mask=require_mask)
+    
     norm_cfg = NormalizationConfig.from_dict(config["data"].get("normalization"))
     return SARSegmentationDataset(
         entries,
