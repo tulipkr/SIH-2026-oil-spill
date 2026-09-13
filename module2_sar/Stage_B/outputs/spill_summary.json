@@ -1,12 +1,12 @@
 {
-  "scene_id": "S1A_CHENNAI_DEMO",
-  "num_regions": 2,
-  "total_area_km2": 0.5759045049853433,
+  "scene_id": "unknown",
+  "num_regions": 22,
+  "total_area_km2": 184.26977110657344,
   "primary_region_centroid": [
-    13.088999998022574,
-    80.3115
+    25.602584670438738,
+    54.61759159087163
   ],
-  "acquisition_timestamp_utc": "2023-12-04T00:30:00Z",
+  "acquisition_timestamp_utc": null,
   "no_oil_detected": false,
   "geometry_unavailable": false,
   "geojson_path": "outputs\\spill_geometry.geojson"
