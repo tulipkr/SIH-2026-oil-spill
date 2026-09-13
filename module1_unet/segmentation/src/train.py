@@ -111,10 +111,21 @@ def run_training(config_path: str) -> dict:
             patch_size=config["data"]["patch_size"],
         )
 
-# Positive-tile fraction in the full 200-scene pretiled dataset.
-    train_positive_fraction = 0.2432
+    # Compute the actual positive-tile fraction from the training manifest.
+    positive_tiles = 0
+
+    for entry in train_entries:
+        mask_path = entry.get("mask_path")
+        if mask_path:
+            mask = torch.load(mask_path, weights_only=False)
+            if mask.float().mean().item() > 0:
+                positive_tiles += 1
+
+    train_positive_fraction = positive_tiles / len(train_entries)
+
     logger.info(
-        f"Fraction of training tiles with oil pixels: {train_positive_fraction:.3f}"
+        f"Fraction of training tiles with oil pixels: "
+        f"{train_positive_fraction:.3f}"
     )
     train_loader = DataLoader(
         train_ds, batch_size=config["train"]["batch_size"], shuffle=True,
