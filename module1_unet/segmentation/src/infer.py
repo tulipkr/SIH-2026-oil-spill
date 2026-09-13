@@ -97,8 +97,8 @@ def run_inference(config_path: str, scene_id: str, checkpoint_path: str | None =
 
     with rasterio.open(patch_path) as src:
         image = src.read().astype(np.float32)
-        crs = str(src.crs) if src.crs else entry.get("crs")
-        transform = list(src.transform)[:6] if src.transform else entry.get("transform")
+        crs = entry.get("crs")
+        transform = entry.get("transform")
 
     if not np.isfinite(image).all():
         raise ValueError(
