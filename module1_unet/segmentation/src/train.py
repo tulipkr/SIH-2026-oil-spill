@@ -31,11 +31,18 @@ logger = logging.getLogger(__name__)
 
 
 def _build_dataset(entries, config, require_mask=True):
-    return PreTiledDataset(
+    sample_path = entries[0].get("image_path") or entries[0].get("patch_path")
+    if str(sample_path).endswith(".pt"):
+        return PreTiledDataset(entries, require_mask=require_mask)
+
+    norm_cfg = NormalizationConfig.from_dict(config["data"].get("normalization"))
+    return SARSegmentationDataset(
         entries,
+        norm_cfg,
+        config["data"]["bands"],
+        patch_size=config["data"]["patch_size"],
         require_mask=require_mask,
     )
-
 
 def run_training(config_path: str) -> dict:
     import torch
