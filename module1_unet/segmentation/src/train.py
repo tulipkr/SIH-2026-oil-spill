@@ -50,13 +50,18 @@ def run_training(config_path: str) -> dict:
     # Train and validation manifests are created BEFORE tiling,
     # so tiles from the same scene never appear in both sets.
 
-    train_manifest = config["data"]["train_manifest_path"]
-    val_manifest = config["data"]["val_manifest_path"]
+    if "train_manifest_path" in config["data"] and "val_manifest_path" in config["data"]:
+        train_manifest_path = config["data"]["train_manifest_path"]
+        val_manifest_path = config["data"]["val_manifest_path"]
+    else:
+        # Backward compatibility for older tests/configs
+        train_manifest_path = config["data"]["manifest_path"]
+        val_manifest_path = config["data"]["manifest_path"]
 
-    with open(train_manifest, "r", encoding="utf-8") as f:
+    with open(train_manifest_path, "r", encoding="utf-8") as f:
         train_data = json.load(f)
 
-    with open(val_manifest, "r", encoding="utf-8") as f:
+    with open(val_manifest_path, "r", encoding="utf-8") as f:
         val_data = json.load(f)
 
     train_entries = train_data["entries"]
