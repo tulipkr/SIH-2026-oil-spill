@@ -131,15 +131,6 @@ def predict_scene(
                             f"in patch at row={row}, col={col}."
                         )
 
-                    patch = apply_normalization(patch, norm_cfg)
-                    # Pad edge patches to 256x256.
-                    padded = np.zeros(
-                        (2, patch_size, patch_size),
-                        dtype=np.float32,
-                    )
-
-                    padded[:, :h, :w] = patch
-
                     if fallback_used:
                         # Fallback must operate on the original dB values.
                         probs, fallback_mask = run_fallback_detection(
@@ -151,6 +142,17 @@ def predict_scene(
                             col:col + w,
                         ] = fallback_mask
                     else:
+                        # U-Net receives the configured normalized representation.
+                        patch = apply_normalization(patch, norm_cfg)
+
+                        # Pad edge patches to 256x256.
+                        padded = np.zeros(
+                            (2, patch_size, patch_size),
+                            dtype=np.float32,
+                        )
+
+                        padded[:, :h, :w] = patch
+
                         tensor = torch.from_numpy(
                             padded
                         ).unsqueeze(0).to(device)
@@ -160,6 +162,7 @@ def predict_scene(
                         probs = torch.sigmoid(logits)
 
                         probs = probs.squeeze().detach().cpu().numpy()
+
                     # Only keep the real image area.
                     probs = probs[:h, :w]
 
