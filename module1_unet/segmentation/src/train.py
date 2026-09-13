@@ -5,7 +5,7 @@ Usage:
     python -m src.train --config configs/config.yaml
 """
 from __future__ import annotations
-
+import numpy as np
 import json
 import argparse
 import logging
@@ -117,15 +117,26 @@ def run_training(config_path: str) -> dict:
 
     # Compute the actual positive-tile fraction from the training manifest.
     positive_tiles = 0
-
     for entry in train_entries:
         mask_path = entry.get("mask_path")
-        if mask_path:
-            mask = torch.load(mask_path, weights_only=False)
-            if mask.float().mean().item() > 0:
-                positive_tiles += 1
 
-    train_positive_fraction = positive_tiles / len(train_entries)
+        if not mask_path:
+            continue
+
+        if str(mask_path).endswith(".pt"):
+            mask = torch.load(mask_path, weights_only=False)
+            has_oil = mask.float().mean().item() > 0
+        else:
+            import rasterio
+
+            with rasterio.open(mask_path) as src:
+                mask = src.read(1)
+            has_oil = np.any(mask > 0)
+
+        if has_oil:
+            positive_tiles += 1
+
+    train_positive_fraction = positive_tiles / max(len(train_entries), 1)
 
     logger.info(
         f"Fraction of training tiles with oil pixels: "
