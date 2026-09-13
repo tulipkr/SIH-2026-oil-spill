@@ -24,7 +24,7 @@ import torch
 
 from src.model import build_model
 from src.utils import load_config
-
+from datetime import datetime, timezone
 
 def load_checkpoint(model, checkpoint_path, device):
     """Load the trained model checkpoint."""
@@ -278,6 +278,9 @@ def predict_scene(
 
     metadata = {
         "scene_id": scene_id,
+        "model_version": "unet_effb3_v1",
+        "inference_timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "acquisition_timestamp_utc": "UNKNOWN",
         "crs": str(crs) if crs else None,
         "transform": [
             transform.a,
@@ -287,18 +290,19 @@ def predict_scene(
             transform.e,
             transform.f,
         ],
-        "acquisition_timestamp_utc": "UNKNOWN",
-        "mask_path": str(mask_path),
-        "probability_map_path": str(probability_path),
-        "no_oil_detected": oil_pixels == 0,
         "geolocation_incomplete": crs is None,
-        "threshold": threshold,
-        "patch_size": patch_size,
-        "image_width": width,
-        "image_height": height,
-        "oil_pixels": oil_pixels,
-        "centroid": centroid,
-        "bounding_box_pixels": bbox,
+        "threshold_used": threshold,
+        "positive_pixel_fraction": float(binary_mask.mean()),
+        "mean_score_in_positive_region": (
+            float(probability_map[binary_mask == 1].mean())
+            if oil_pixels > 0
+            else 0.0
+        ),
+        "no_oil_detected": oil_pixels == 0,
+        "score_type": "raw_sigmoid_output",
+        "fallback_used": False,
+        "prob_map_path": str(probability_path),
+        "mask_path": str(mask_path),
     }
 
     metadata_path = (

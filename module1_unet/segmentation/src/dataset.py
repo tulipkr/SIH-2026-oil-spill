@@ -69,7 +69,10 @@ def apply_normalization(image: np.ndarray, cfg: NormalizationConfig) -> np.ndarr
     )
 
 
-def _load_geotiff(path: str | Path) -> tuple[np.ndarray, dict[str, Any]]:
+def _load_geotiff(
+    path: str | Path,
+    window=None,
+) -> tuple[np.ndarray, dict[str, Any]]:
     import rasterio
 
     path = Path(path)
@@ -78,7 +81,11 @@ def _load_geotiff(path: str | Path) -> tuple[np.ndarray, dict[str, Any]]:
 
     try:
         with rasterio.open(path) as src:
-            arr = src.read().astype(np.float32)  # (bands, H, W)
+            if window is None:
+                arr = src.read().astype(np.float32)
+            else:
+                arr = src.read(window=window).astype(np.float32)
+
             meta = {
                 "crs": str(src.crs) if src.crs else None,
                 "transform": list(src.transform)[:6] if src.transform else None,
@@ -86,13 +93,15 @@ def _load_geotiff(path: str | Path) -> tuple[np.ndarray, dict[str, Any]]:
                 "height": src.height,
                 "count": src.count,
             }
+
     except rasterio.errors.RasterioIOError as e:
-        raise DatasetValidationError(f"Could not read GeoTIFF at {path}: {e}") from e
+        raise DatasetValidationError(
+            f"Could not read GeoTIFF at {path}: {e}"
+        ) from e
 
     return arr, meta
 
-
-def _load_mask(path: str | Path) -> np.ndarray:
+def _load_mask(path: str | Path, window=None) -> np.ndarray:
     import rasterio
 
     path = Path(path)
@@ -100,7 +109,7 @@ def _load_mask(path: str | Path) -> np.ndarray:
         raise DatasetValidationError(f"Mask file not found: {path.resolve()}")
 
     with rasterio.open(path) as src:
-        arr = src.read(1)
+        arr = src.read(1, window=window).astype(np.float32)
 
     unique_vals = np.unique(arr)
     if not np.all(np.isin(unique_vals, [0, 1])):
@@ -189,26 +198,41 @@ class SARSegmentationDataset:
                 )
 
     def _build_tile_index(self) -> list[tuple[int, int, int]]:
-        """Lazily builds (entry_idx, y, x) tile positions by reading each image's shape once."""
+            
         index: list[tuple[int, int, int]] = []
+
+        import rasterio
+
         for i, entry in enumerate(self.entries):
-            image, _meta = _load_geotiff(entry["patch_path"])
-            h, w = image.shape[1], image.shape[2]
+            # Only read image metadata, not the entire image.
+            with rasterio.open(entry["patch_path"]) as src:
+                h = src.height
+                w = src.width
+
             if h == self.patch_size and w == self.patch_size:
                 index.append((i, 0, 0))
                 continue
+
             if h < self.patch_size or w < self.patch_size:
                 raise DatasetValidationError(
                     f"scene_id={entry['scene_id']}: image is {h}x{w}, smaller than "
                     f"patch_size={self.patch_size}. Cannot tile an undersized image."
                 )
+
             if self.tiling_strategy == "sliding_window":
-                for y, x in _tile_indices(h, w, self.patch_size, self.tiling_stride):
+                for y, x in _tile_indices(
+                    h, w, self.patch_size, self.tiling_stride
+                ):
                     index.append((i, y, x))
+
             elif self.tiling_strategy == "random_crop":
-                index.append((i, -1, -1))  # -1 sentinel: crop position chosen at __getitem__
+                index.append((i, -1, -1))
+
             else:
-                raise ValueError(f"Unknown tiling.strategy '{self.tiling_strategy}'")
+                raise ValueError(
+                    f"Unknown tiling.strategy '{self.tiling_strategy}'"
+                )
+
         return index
 
     def __len__(self) -> int:
@@ -224,20 +248,35 @@ class SARSegmentationDataset:
         entry_idx, y, x = self._index[idx]
         entry = self.entries[entry_idx]
 
-        image, meta = _load_geotiff(entry["patch_path"])
+        if y == -1:  # random_crop
+            import rasterio
+
+            with rasterio.open(entry["patch_path"]) as src:
+                h = src.height
+                w = src.width
+
+            y = int(self._rng.randint(0, max(h - self.patch_size, 0) + 1))
+            x = int(self._rng.randint(0, max(w - self.patch_size, 0) + 1))
+
+        from rasterio.windows import Window
+
+        window = Window(
+            x,
+            y,
+            self.patch_size,
+            self.patch_size
+        )
+
+        image, meta = _load_geotiff(
+            entry["patch_path"],
+            window=window
+        )
+
         if image.shape[0] != len(self.expected_bands):
             raise DatasetValidationError(
                 f"scene_id={entry['scene_id']}: patch has {image.shape[0]} bands, "
                 f"expected {len(self.expected_bands)} ({self.expected_bands})."
             )
-
-        h, w = image.shape[1], image.shape[2]
-        if y == -1:  # random_crop sentinel
-            y = int(self._rng.randint(0, max(h - self.patch_size, 0) + 1))
-            x = int(self._rng.randint(0, max(w - self.patch_size, 0) + 1))
-
-        image = image[:, y : y + self.patch_size, x : x + self.patch_size]
-
         if not np.isfinite(image).all():
             n_bad = np.size(image) - np.count_nonzero(np.isfinite(image))
             raise DatasetValidationError(
@@ -248,8 +287,7 @@ class SARSegmentationDataset:
         image = apply_normalization(image, self.normalization)
 
         if self.require_mask:
-            mask = _load_mask(entry["mask_path"])
-            mask = mask[y : y + self.patch_size, x : x + self.patch_size]
+            mask = _load_mask(entry["mask_path"], window=window)
             if mask.shape != (self.patch_size, self.patch_size):
                 raise DatasetValidationError(
                     f"scene_id={entry['scene_id']}: mask tile shape {mask.shape} does not "
