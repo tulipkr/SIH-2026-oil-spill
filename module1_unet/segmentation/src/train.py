@@ -30,7 +30,7 @@ from src.utils import load_config, resolve_device, set_seed, setup_logging, writ
 logger = logging.getLogger(__name__)
 
 
-def _build_dataset(entries, config, require_mask=True):
+def _build_dataset(entries, config, require_mask=True, augmentation=None):
     sample_path = entries[0].get("image_path") or entries[0].get("patch_path")
     if str(sample_path).endswith(".pt"):
         norm_cfg = NormalizationConfig.from_dict(config["data"].get("normalization"))
@@ -38,7 +38,7 @@ def _build_dataset(entries, config, require_mask=True):
             entries,
             norm_cfg,
             require_mask=require_mask,
-            augmentation=config["data"].get("augmentation"),
+            augmentation=augmentation,
         )    
     norm_cfg = NormalizationConfig.from_dict(config["data"].get("normalization"))
     return SARSegmentationDataset(
@@ -95,11 +95,12 @@ def run_training(config_path: str) -> dict:
         )
 
     if "train_manifest_path" in config["data"] and "val_manifest_path" in config["data"]:
-        train_ds = _build_dataset(train_entries, config, require_mask=True)
+        train_ds = _build_dataset(train_entries, config, require_mask=True, augmentation=config["data"].get("augmentation"))
         val_ds = _build_dataset(
             val_entries if val_entries else train_entries,
             config,
-            require_mask=True
+            require_mask=True,
+            augmentation={},
         )
     else:
         train_ds = SARSegmentationDataset(
@@ -270,7 +271,7 @@ def run_training(config_path: str) -> dict:
     lookalike_path = config["train"].get("lookalike_manifest_path")
     if lookalike_path and Path(lookalike_path).exists():
         lookalike_entries = load_manifest_entries(lookalike_path)
-        lookalike_ds = _build_dataset(lookalike_entries, config, require_mask=True)
+        lookalike_ds = _build_dataset(lookalike_entries, config, require_mask=True, augmentation={})
         lookalike_loader = DataLoader(lookalike_ds, batch_size=config["train"]["batch_size"])
         positive_fractions = []
         model.eval()
