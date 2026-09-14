@@ -1,0 +1,225 @@
+{
+  "run_id": "demo-run-001",
+  "scene_id": "kamarajar-port-demo",
+  "run_mode": "precomputed",
+  "started_at_utc": "2026-09-09T03:00:00Z",
+  "completed_at_utc": "2026-09-09T03:15:00Z",
+  "overall_status": "success",
+
+  "stages": {
+    "sar_preprocessing": {
+      "status": "success",
+      "output_path": null,
+      "error": null
+    },
+
+    "segmentation": {
+      "status": "success",
+      "output_path": null,
+      "error": null
+    },
+
+    "geometry_extraction": {
+      "status": "success",
+      "output_paths": {
+        "spill_geometry_geojson": null,
+        "spill_summary": null
+      },
+      "error": null
+    },
+
+    "drift_backtracking": {
+      "status": "success",
+      "output_path": null,
+      "error": null
+    },
+
+    "ais_ranking": {
+      "status": "success",
+      "output_paths": {
+        "candidate_ranking": null,
+        "normalized_ais_tracks": null
+      },
+      "error": null
+    }
+  },
+
+  "failed_stage": null,
+
+  "results": {
+
+    "spill_geometry_geojson": {
+      "type": "FeatureCollection",
+
+      "features": [
+        {
+          "type": "Feature",
+
+          "properties": {
+            "region_id": "spill-001",
+            "area_km2": 2.8,
+            "status": "Detected oil spill"
+          },
+
+          "geometry": {
+            "type": "Polygon",
+
+            "coordinates": [
+              [
+                [80.31, 13.25],
+                [80.34, 13.25],
+                [80.35, 13.23],
+                [80.32, 13.22],
+                [80.30, 13.24],
+                [80.31, 13.25]
+              ]
+            ]
+          }
+        }
+      ]
+    },
+
+    "spill_summary": {
+      "no_oil_detected": false,
+      "primary_region_id": "spill-001"
+    },
+
+    "source_estimate": {
+
+      "backtracking_valid": true,
+      "uncertainty_high": false,
+      "physically_implausible": false,
+      "uncertainty_radius_km": 4.5,
+
+      "source_region": {
+        "type": "Feature",
+
+        "properties": {
+          "region_id": "estimated-source",
+          "description": "Estimated spill source region"
+        },
+
+        "geometry": {
+          "type": "Point",
+          "coordinates": [80.29, 13.27]
+        }
+      },
+
+      "drift_trajectory_geojson": {
+        "type": "FeatureCollection",
+
+        "features": [
+          {
+            "type": "Feature",
+
+            "properties": {
+              "type": "drift trajectory"
+            },
+
+            "geometry": {
+              "type": "LineString",
+
+              "coordinates": [
+                [80.29, 13.27],
+                [80.30, 13.26],
+                [80.31, 13.25],
+                [80.33, 13.24],
+                [80.35, 13.23]
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    "candidate_ranking": {
+
+      "disclaimer": "Candidate vessels are analytical matches and do not establish legal responsibility.",
+
+      "candidates": [
+
+        {
+          "rank": 1,
+          "vessel_name": "Demo Vessel 1",
+          "vessel_id": "IMO-1234567",
+          "mmsi": "123456789",
+          "score": 0.92,
+          "evidence": {
+            "spatial_match": 0.95,
+            "temporal_match": 0.90,
+            "trajectory_match": 0.91
+          }
+        },
+
+        {
+          "rank": 2,
+          "vessel_name": "Demo Vessel 2",
+          "vessel_id": "IMO-7654321",
+          "mmsi": "987654321",
+          "score": 0.71,
+          "evidence": {
+            "spatial_match": 0.75,
+            "temporal_match": 0.68,
+            "trajectory_match": 0.70
+          }
+        }
+      ]
+    },
+
+    "normalized_ais_tracks": {
+
+      "type": "FeatureCollection",
+
+      "features": [
+
+        {
+          "type": "Feature",
+
+          "properties": {
+            "vessel_id": "IMO-1234567",
+            "vessel_name": "Demo Vessel 1",
+            "mmsi": "123456789",
+            "candidate_rank": 1,
+            "score": 0.92
+          },
+
+          "geometry": {
+            "type": "LineString",
+
+            "coordinates": [
+              [80.25, 13.18],
+              [80.27, 13.20],
+              [80.29, 13.22],
+              [80.31, 13.24],
+              [80.33, 13.26]
+            ]
+          }
+        },
+
+        {
+          "type": "Feature",
+
+          "properties": {
+            "vessel_id": "IMO-7654321",
+            "vessel_name": "Demo Vessel 2",
+            "mmsi": "987654321",
+            "candidate_rank": 2,
+            "score": 0.71
+          },
+
+          "geometry": {
+            "type": "LineString",
+
+            "coordinates": [
+              [80.40, 13.18],
+              [80.38, 13.20],
+              [80.36, 13.22],
+              [80.34, 13.24],
+              [80.32, 13.26]
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
